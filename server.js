@@ -39,7 +39,15 @@ app.post('/login', async (req, res) => {
 
 app.get('/mundos', async (req, res) => {
   const auth = req.headers.authorization?.split(' ')[1];
-  const { userId } = jwt.verify(auth, JWT_SECRET);
+  try {
+    const { userId } = jwt.verify(auth, JWT_SECRET);
+    const mundos = await Mundo.find({ owner: userId });
+    res.json(mundos);
+  } catch (error) {
+    console.error("❌ Error de token:", error.message);
+    res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+  
   const mundos = await Mundo.find({ owner: userId });
   res.json(mundos);
 });

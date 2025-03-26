@@ -1,12 +1,54 @@
 <!DOCTYPE html>
-<html>
-<head><title>Login</title></head>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+</head>
 <body>
-  <h2>Iniciar sesi�n</h2>
-  <form action="/login" method="post">
-    Usuario: <input name="username"><br>
-    Contrase�a: <input type="password" name="password"><br>
+  <h1>Iniciar Sesión</h1>
+  <form id="loginForm">
+    <input type="text" name="username" placeholder="Usuario" required />
+    <input type="password" name="password" placeholder="Contraseña" required />
     <button type="submit">Entrar</button>
   </form>
+
+  <p id="mensaje"></p>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const mensaje = document.getElementById('mensaje');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const datos = {
+        username: form.username.value,
+        password: form.password.value
+      };
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        if (!res.ok) {
+          mensaje.textContent = '❌ Usuario o contraseña incorrectos';
+          return;
+        }
+
+        const json = await res.json();
+        localStorage.setItem('token', json.token);
+        mensaje.textContent = '✅ Sesión iniciada correctamente';
+        
+        // Redirige al dashboard
+        window.location.href = '/dashboard.html';
+      } catch (error) {
+        console.error(error);
+        mensaje.textContent = '⚠️ Error al iniciar sesión';
+      }
+    });
+  </script>
 </body>
 </html>
