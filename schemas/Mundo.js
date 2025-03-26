@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 
-const MundoSchema = new mongoose.Schema({
-  nombre: String,
-  puerto: Number,
-  memoria: String,
+const mundoSchema = new mongoose.Schema({
+  nombre: { type: String, required: true },
+  puerto: { type: Number, required: true },
+  ram: { type: Number, required: true },
+  estado: { type: String, default: "apagado" },
   jugadores: [String],
-  status: { type: String, enum: ['running', 'stopped'], default: 'stopped' },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' }
+  
 });
 
-module.exports = mongoose.model('Mundo', MundoSchema);
+module.exports = mongoose.model('Mundo', mundoSchema);

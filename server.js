@@ -7,10 +7,15 @@ const connectDB = require('./db/connect');
 const { PORT, JWT_SECRET } = require('./config/config');
 const path = require('path');
 
+require('dotenv').config(); // si usas .env
+require('./db/mongo');
+
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'www')));
+const crypto = require('crypto');
+const { exec } = require('child_process');
 
 connectDB();
 
@@ -38,5 +43,92 @@ app.get('/mundos', async (req, res) => {
   const mundos = await Mundo.find({ owner: userId });
   res.json(mundos);
 });
+app.post('/crear-mundo', async (req, res) => {
+  try {
+    const auth = req.headers.authorization?.split(' ')[1];
+    const { userId } = jwt.verify(auth, JWT_SECRET);
+    const usuario = await Usuario.findById(userId);
+    const mundosActuales = await Mundo.countDocuments({ owner: userId });
+
+    if (mundosActuales >= usuario.limiteMundos) {
+      return res.status(403).send("❌ Límite de mundos alcanzado");
+    }
+
+    const { nombre, puerto, ram } = req.body;
+    const mundo = new Mundo({ nombre, puerto, ram, owner: userId });
+    await mundo.save();
+
+    res.status(201).json({ message: "Mundo creado" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al crear mundo");
+  }
+});
+
 
 app.listen(PORT, () => console.log(`Servidor Node corriendo en el puerto ${PORT}`));
+
+// Clave secreta (debe coincidir con la que pongas en GitHub)
+const WEBHOOK_SECRET = 'borja-super-secreto';
+
+// Middleware para leer texto plano
+app.use('/webhook', express.raw({ type: '*/*' }));
+
+app.post('/webhook', (req, res) => {
+  const sig = req.headers['x-hub-signature-256'];
+
+  const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
+  hmac.update(req.body);
+  const digest = `sha256=${hmac.digest('hex')}`;
+
+  if (sig !== digest) {
+    console.log('❌ Firma inválida de GitHub');
+    return res.status(401).send('Firma inválida');
+  }
+
+  console.log('✅ Webhook recibido. Ejecutando deploy...');
+  exec('/home/borjaeditions/scripts/git-deploy.sh', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`❌ Error: ${error.message}`);
+      return res.status(500).send('Error al ejecutar script');
+    }
+    console.log(`🧾 Salida:\n${stdout}`);
+    console.error(`⚠️ Stderr:\n${stderr}`);
+    res.status(200).send('Despliegue iniciado');
+  });
+});
+
+app.patch('/mundo/:id/running', async (req, res) => {
+  const auth = req.headers.authorization?.split(' ')[1];
+  const { userId } = jwt.verify(auth, JWT_SECRET);
+  const mundo = await Mundo.findOne({ _id: req.params.id, owner: userId });
+  if (!mundo) return res.status(404).send('Mundo no encontrado');
+
+  mundo.status = 'running';
+  await mundo.save();
+  res.send('Mundo encendido');
+});
+
+app.patch('/mundo/:id/stopped', async (req, res) => {
+  const auth = req.headers.authorization?.split(' ')[1];
+  const { userId } = jwt.verify(auth, JWT_SECRET);
+  const mundo = await Mundo.findOne({ _id: req.params.id, owner: userId });
+  if (!mundo) return res.status(404).send('Mundo no encontrado');
+
+  mundo.status = 'stopped';
+  await mundo.save();
+  res.send('Mundo apagado');
+});
+app.patch('/mundo/:id/jugadores', async (req, res) => {
+  const auth = req.headers.authorization?.split(' ')[1];
+  const { userId } = jwt.verify(auth, JWT_SECRET);
+
+  const mundo = await Mundo.findOne({ _id: req.params.id, owner: userId });
+  if (!mundo) return res.status(404).send('Mundo no encontrado');
+
+  mundo.jugadores = req.body.jugadores;
+  await mundo.save();
+
+  res.send('Jugadores actualizados');
+});
