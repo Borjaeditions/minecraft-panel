@@ -13,10 +13,21 @@
   </style>
 </head>
 <body>
-  <h1>🌍 Tus mundos de Minecraft</h1>
+  <h1>🌍 Tus mun  dos de Minecraft</h1>
   <button onclick="logout()">Cerrar sesión</button>
 
   <div id="lista-mundos"></div>
+
+  <h2>➕ Crear nuevo mundo</h2>
+  <form id="crearMundoForm">
+    <input type="text" name="nombre" placeholder="Nombre del mundo" required>
+    <input type="text" name="memoria" placeholder="Memoria (ej. 2G, 4G)" required>
+    <input type="text" name="jugadores" placeholder="Usuarios permitidos (separados por coma)">
+    <button type="submit">Crear mundo</button>
+  </form>
+
+  <p id="mensaje"></p>
+
 
   <script>
     const token = localStorage.getItem('token');
@@ -69,6 +80,46 @@
     }
 
     cargarMundos();
+
+    document.getElementById('crearMundoForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    const nuevoMundo = {
+      nombre: form.nombre.value,
+      memoria: form.memoria.value,
+      jugadores: form.jugadores.value.split(',').map(j => j.trim())
+    };
+
+    try {
+      const res = await fetch('/mundos', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(nuevoMundo)
+      });
+
+      const mensaje = document.getElementById('mensaje');
+
+      if (res.status === 403) {
+        mensaje.textContent = '❌ Límite de mundos alcanzado.';
+      } else if (!res.ok) {
+        mensaje.textContent = '⚠️ Error al crear el mundo.';
+      } else {
+        mensaje.textContent = '✅ Mundo creado correctamente.';
+        form.reset();
+        lista.innerHTML = ''; // limpiar mundos
+        cargarMundos();       // recargar desde el servidor
+      }
+    } catch (error) {
+      console.error(error);
+      alert('❌ Error al conectar con el servidor');
+    }
+  });
+
+
   </script>
 </body>
 </html>

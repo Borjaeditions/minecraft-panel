@@ -37,20 +37,36 @@ app.post('/login', async (req, res) => {
   res.json({ token });
 });
 
-app.get('/mundos', async (req, res) => {
-  const auth = req.headers.authorization?.split(' ')[1];
+app.post('/mundos', async (req, res) => {
   try {
+    const auth = req.headers.authorization?.split(' ')[1];
     const { userId } = jwt.verify(auth, JWT_SECRET);
-    const mundos = await Mundo.find({ owner: userId });
-    res.json(mundos);
+    const user = await Usuario.findById(userId);
+    
+    const total = await Mundo.countDocuments({ owner: userId });
+
+    if (total >= user.limiteMundos) {
+      return res.status(403).send('Límite alcanzado');
+    }
+
+    const { nombre, memoria, jugadores } = req.body;
+    const nuevoMundo = new Mundo({
+      nombre,
+      memoria,
+      jugadores,
+      status: 'stopped',
+      owner: userId,
+      puerto: 25565 + total // provisional: asigna un puerto base + índice
+    });
+
+    await nuevoMundo.save();
+    res.status(201).json(nuevoMundo);
   } catch (error) {
-    console.error("❌ Error de token:", error.message);
-    res.status(401).json({ error: 'Token inválido o expirado' });
+    console.error(error);
+    res.status(500).send('Error al crear el mundo');
   }
-  
-  const mundos = await Mundo.find({ owner: userId });
-  res.json(mundos);
 });
+
 app.post('/crear-mundo', async (req, res) => {
   try {
     const auth = req.headers.authorization?.split(' ')[1];
@@ -140,3 +156,4 @@ app.patch('/mundo/:id/jugadores', async (req, res) => {
 
   res.send('Jugadores actualizados');
 });
+
