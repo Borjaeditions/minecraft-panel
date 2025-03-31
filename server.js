@@ -77,11 +77,15 @@ app.post('/crear-mundo', async (req, res) => {
     await mundo.save();
 
     res.status(201).json({ message: "Mundo creado" });
+    await mundo.save();
+    crearContenedorDocker(mundo); // Llama la función para crear el contenedor
+    res.status(201).json({ message: "Mundo creado" });
 
   } catch (err) {
     console.error("❌ Error al crear mundo:", err);
     res.status(500).send("Error al crear mundo");
   }
+  
 });
 
 
@@ -151,4 +155,29 @@ app.patch('/mundo/:id/jugadores', async (req, res) => {
 
   res.send('Jugadores actualizados');
 });
+
+function crearContenedorDocker(mundo) {
+  const { nombre, puerto, memoria } = mundo;
+  const nombreContenedor = `mc-${nombre.toLowerCase()}`;
+
+  const comando = `docker run -d \
+  --name ${nombreContenedor} \
+  -e EULA=TRUE \
+  -e MEMORY=${memoria} \
+  -p ${puerto}:25565 \
+  -v /home/borjaeditions/mundos/${nombre}:/data \
+  itzg/minecraft-server`;
+
+  exec(comando, (err, stdout, stderr) => {
+    if (err) {
+      console.error(`❌ Error creando contenedor: ${err.message}`);
+    } else {
+      console.log(`✅ Contenedor ${nombreContenedor} creado con ID: ${stdout.trim()}`);
+    }
+    if (stderr) {
+      console.warn(`⚠️ STDERR: ${stderr}`);
+    }
+  });
+}
+
 
