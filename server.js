@@ -60,8 +60,14 @@ app.post('/crear-mundo', async (req, res) => {
       return res.status(403).send("❌ Límite de mundos alcanzado");
     }
 
-    const { nombre, puerto, ram } = req.body;
-    const mundo = new Mundo({ nombre, puerto, ram, owner: userId });
+    const { nombre, memoria, jugadores } = req.body;
+    const mundo = new Mundo({
+      nombre,
+      memoria,
+      jugadores,
+      owner: userId,
+      status: 'stopped' // opcional, ya que el schema lo pone por defecto
+    });
     await mundo.save();
 
     res.status(201).json({ message: "Mundo creado" });
