@@ -6,6 +6,7 @@ const Mundo = require('./schemas/Mundo');
 const connectDB = require('./db/connect');
 const { PORT, JWT_SECRET } = require('./config/config');
 const path = require('path');
+const generarPuertoUnico = require('./utils/puerto');
 
 require('dotenv').config(); // si usas .env
 require('./db/mongo');
@@ -61,22 +62,28 @@ app.post('/crear-mundo', async (req, res) => {
     }
 
     const { nombre, memoria, jugadores } = req.body;
+
+    const puerto = await generarPuertoUnico();
+
     const mundo = new Mundo({
       nombre,
       memoria,
       jugadores,
+      puerto,
       owner: userId,
-      status: 'stopped' // opcional, ya que el schema lo pone por defecto
+      status: 'stopped'
     });
+
     await mundo.save();
 
     res.status(201).json({ message: "Mundo creado" });
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error al crear mundo:", err);
     res.status(500).send("Error al crear mundo");
   }
 });
+
 
 
 app.listen(PORT, () => console.log(`Servidor Node corriendo en el puerto ${PORT}`));
