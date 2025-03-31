@@ -76,8 +76,7 @@ app.post('/crear-mundo', async (req, res) => {
 
     await mundo.save();
 
-    await mundo.save();
-    crearContenedorDocker(mundo); // Llama la función para crear el contenedor
+    await crearContenedorDocker(mundo); // Esperar a que termine antes de responder
     res.status(201).json({ message: "Mundo creado" });
 
   } catch (err) {
