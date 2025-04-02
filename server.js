@@ -129,11 +129,15 @@ app.patch('/mundo/:id/running', async (req, res) => {
   mundo.status = 'running';
   await mundo.save();
 
-  // 🚀 Llamar script para crear contenedor (si no existe)
-  exec(`/scripts/crear-contenedor.sh "${mundo.nombre}" "${mundo.puerto}" "${mundo.memoria}"`, (err, stdout, stderr) => {
-    if (err) console.error(`❌ Error al iniciar contenedor: ${err.message}`);
-    if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
-    if (stdout) console.log(`✅ Contenedor iniciado:\n${stdout}`);
+  // ✅ Llamar al servicio local del host
+  await fetch('http://host.docker.internal:5050/crear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombre: mundo.nombre,
+      puerto: mundo.puerto,
+      memoria: mundo.memoria
+    })
   });
 
   res.send('Mundo encendido');
@@ -149,15 +153,16 @@ app.patch('/mundo/:id/stopped', async (req, res) => {
   mundo.status = 'stopped';
   await mundo.save();
 
-  // 🛑 Llamar script para detener y eliminar el contenedor
-  exec(`/scripts/detener-contenedor.sh "${mundo.nombre}"`, (err, stdout, stderr) => {
-    if (err) console.error(`❌ Error al detener contenedor: ${err.message}`);
-    if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
-    if (stdout) console.log(`✅ Contenedor detenido:\n${stdout}`);
+  // ✅ Llamar al servicio del host para detener el contenedor
+  await fetch('http://host.docker.internal:5050/detener', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre: mundo.nombre })
   });
 
   res.send('Mundo apagado');
 });
+
 app.patch('/mundo/:id/jugadores', async (req, res) => {
   const auth = req.headers.authorization?.split(' ')[1];
   const { userId } = jwt.verify(auth, JWT_SECRET);
