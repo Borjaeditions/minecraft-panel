@@ -7,6 +7,8 @@ const connectDB = require('./db/connect');
 const { PORT, JWT_SECRET } = require('./config/config');
 const path = require('path');
 const generarPuertoUnico = require('./utils/puerto');
+const { exec } = require('child_process');
+
 
 require('dotenv').config(); // si usas .env
 require('./db/mongo');
@@ -139,6 +141,14 @@ app.patch('/mundo/:id/stopped', async (req, res) => {
 
   mundo.status = 'stopped';
   await mundo.save();
+
+  // 🛑 Llamar script para detener y eliminar el contenedor
+  exec(`/home/borjaeditions/scripts/detener-contenedor.sh "${mundo.nombre}"`, (err, stdout, stderr) => {
+    if (err) console.error(`❌ Error al detener contenedor: ${err.message}`);
+    if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
+    if (stdout) console.log(`✅ Contenedor detenido:\n${stdout}`);
+  });
+
   res.send('Mundo apagado');
 });
 app.patch('/mundo/:id/jugadores', async (req, res) => {
@@ -156,24 +166,17 @@ app.patch('/mundo/:id/jugadores', async (req, res) => {
 
 function crearContenedorDocker(mundo) {
   const { nombre, puerto, memoria } = mundo;
-  const nombreContenedor = `mc-${nombre.toLowerCase()}`;
-
-  const comando = `docker run -d \
-  --name ${nombreContenedor} \
-  -e EULA=TRUE \
-  -e MEMORY=${memoria} \
-  -p ${puerto}:25565 \
-  -v /home/borjaeditions/mundos/${nombre}:/data \
-  itzg/minecraft-server`;
+  const comando = `/home/borjaeditions/scripts/crear-contenedor.sh "${nombre}" "${puerto}" "${memoria}"`;
 
   exec(comando, (err, stdout, stderr) => {
     if (err) {
-      console.error(`❌ Error creando contenedor: ${err.message}`);
+      console.error(`❌ Error al ejecutar el script: ${err.message}`);
     } else {
-      console.log(`✅ Contenedor ${nombreContenedor} creado con ID: ${stdout.trim()}`);
+      console.log(`✅ Script ejecutado:\n${stdout}`);
     }
+
     if (stderr) {
-      console.warn(`⚠️ STDERR: ${stderr}`);
+      console.warn(`⚠️ STDERR:\n${stderr}`);
     }
   });
 }
