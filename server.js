@@ -7,8 +7,6 @@ const connectDB = require('./db/connect');
 const { PORT, JWT_SECRET } = require('./config/config');
 const path = require('path');
 const generarPuertoUnico = require('./utils/puerto');
-const { exec } = require('child_process');
-
 
 require('dotenv').config(); // si usas .env
 require('./db/mongo');
