@@ -130,7 +130,7 @@ app.patch('/mundo/:id/running', async (req, res) => {
   await mundo.save();
 
   // ✅ Llamar al servicio local del host
-  await fetch('http://127.0.0.1:5050/crearr', {
+  await fetch('http://172.17.0.1:5050/crearr', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -154,7 +154,7 @@ app.patch('/mundo/:id/stopped', async (req, res) => {
   await mundo.save();
 
   // ✅ Llamar al servicio del host para detener el contenedor
-  await fetch('http://127.0.0.1:5050/crear', {
+  await fetch('http://172.17.0.1:5050/crear', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nombre: mundo.nombre })
