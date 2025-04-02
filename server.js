@@ -76,15 +76,25 @@ app.post('/crear-mundo', async (req, res) => {
 
     await mundo.save();
 
-    await crearContenedorDocker(mundo); // Esperar a que termine antes de responder
+    // ✅ Llamar a la API del host para crear el contenedor
+    await fetch('http://172.17.0.1:5050/crear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: mundo.nombre,
+        puerto: mundo.puerto,
+        memoria: mundo.memoria
+      })
+    });
+
     res.status(201).json({ message: "Mundo creado" });
 
   } catch (err) {
     console.error("❌ Error al crear mundo:", err);
     res.status(500).send("Error al crear mundo");
   }
-  
 });
+
 
 
 
