@@ -130,7 +130,7 @@ app.patch('/mundo/:id/running', async (req, res) => {
   await mundo.save();
 
   // 🚀 Llamar script para crear contenedor (si no existe)
-  exec(`/home/borjaeditions/scripts/crear-contenedor.sh "${mundo.nombre}" "${mundo.puerto}" "${mundo.memoria}"`, (err, stdout, stderr) => {
+  exec(`/scripts/crear-contenedor.sh "${mundo.nombre}" "${mundo.puerto}" "${mundo.memoria}"`, (err, stdout, stderr) => {
     if (err) console.error(`❌ Error al iniciar contenedor: ${err.message}`);
     if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
     if (stdout) console.log(`✅ Contenedor iniciado:\n${stdout}`);
@@ -150,7 +150,7 @@ app.patch('/mundo/:id/stopped', async (req, res) => {
   await mundo.save();
 
   // 🛑 Llamar script para detener y eliminar el contenedor
-  exec(`/home/borjaeditions/scripts/detener-contenedor.sh "${mundo.nombre}"`, (err, stdout, stderr) => {
+  exec(`/scripts/detener-contenedor.sh "${mundo.nombre}"`, (err, stdout, stderr) => {
     if (err) console.error(`❌ Error al detener contenedor: ${err.message}`);
     if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
     if (stdout) console.log(`✅ Contenedor detenido:\n${stdout}`);
@@ -173,7 +173,7 @@ app.patch('/mundo/:id/jugadores', async (req, res) => {
 
 function crearContenedorDocker(mundo) {
   const { nombre, puerto, memoria } = mundo;
-  const comando = `/home/borjaeditions/scripts/crear-contenedor.sh "${nombre}" "${puerto}" "${memoria}"`;
+  const comando = `/scripts/crear-contenedor.sh "${nombre}" "${puerto}" "${memoria}"`;
 
   exec(comando, (err, stdout, stderr) => {
     if (err) {
