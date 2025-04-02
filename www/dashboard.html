@@ -53,19 +53,28 @@
         const mundos = await res.json();
         if (mundos.length === 0) {
           lista.innerHTML = '<p>No tienes mundos creados todavía.</p>';
-        } else {
-          mundos.forEach(m => {
-            const div = document.createElement('div');
-            div.className = 'mundo';
-            div.innerHTML = `
-              <strong>${m.nombre}</strong><br/>
-              Memoria: ${m.memoria}<br/>
-              Puerto: ${m.puerto}<br/>
-              Jugadores: ${m.jugadores.join(', ') || 'Ninguno'}<br/>
-              Estado: <b>${m.status}</b>
-            `;
-            lista.appendChild(div);
-          });
+        } else {mundos.forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'mundo';
+
+          const botones = `
+            ${m.status === 'running' 
+              ? `<button onclick="apagarMundo('${m._id}')">⛔ Apagar</button>` 
+              : `<button onclick="encenderMundo('${m._id}')">⚡ Encender</button>`
+            }
+          `;
+
+          div.innerHTML = `
+            <strong>${m.nombre}</strong><br/>
+            Memoria: ${m.memoria}<br/>
+            Puerto: ${m.puerto}<br/>
+            Jugadores: ${m.jugadores.join(', ') || 'Ninguno'}<br/>
+            Estado: <b>${m.status}</b><br/>
+            ${botones}
+          `;
+          lista.appendChild(div);
+        });
+
         }
       } catch (err) {
         console.error(err);
@@ -119,6 +128,31 @@
     }
   });
 
+  async function encenderMundo(id) {
+    try {
+      await fetch(`/mundo/${id}/running`, {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      cargarMundos();
+    } catch (err) {
+      console.error(err);
+      alert('❌ No se pudo encender el mundo');
+    }
+  }
+
+  async function apagarMundo(id) {
+    try {
+      await fetch(`/mundo/${id}/stopped`, {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      cargarMundos();
+    } catch (err) {
+      console.error(err);
+      alert('❌ No se pudo apagar el mundo');
+    }
+  }
 
   </script>
 </body>

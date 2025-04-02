@@ -130,8 +130,17 @@ app.patch('/mundo/:id/running', async (req, res) => {
 
   mundo.status = 'running';
   await mundo.save();
+
+  // 🚀 Llamar script para crear contenedor (si no existe)
+  exec(`/home/borjaeditions/scripts/crear-contenedor.sh "${mundo.nombre}" "${mundo.puerto}" "${mundo.memoria}"`, (err, stdout, stderr) => {
+    if (err) console.error(`❌ Error al iniciar contenedor: ${err.message}`);
+    if (stderr) console.warn(`⚠️ STDERR:\n${stderr}`);
+    if (stdout) console.log(`✅ Contenedor iniciado:\n${stdout}`);
+  });
+
   res.send('Mundo encendido');
 });
+
 
 app.patch('/mundo/:id/stopped', async (req, res) => {
   const auth = req.headers.authorization?.split(' ')[1];
